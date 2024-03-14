@@ -75,19 +75,20 @@ const readBlocksFromCSV = async (filePath: string): Promise<number[]> => {
 
 const getData = async () => {
   const snapshotBlocks = [
-    3116208, 3159408, 3202608, 3245808, 3289008, 3332208,
-    3375408, 3418608, 3461808, 3505008, 3548208, 3591408,
-    3634608, 3677808, 3721008, 3764208, 3807408, 3850608,
-    3893808, 3937008, 3980208, 3983003,
+    2116208, 2159408, 2202608, 2245808, 2289008, 2332208,
+    2375408, 2418608, 2461808, 2505008, 2548208, 2591408,
+    2634608, 2677808, 2721008, 2764208, 2807408, 2850608,
+    2893808,
   ]; //await readBlocksFromCSV('src/sdk/mode_chain_daily_blocks.csv');
   
   const csvRows: CSVRow[] = [];
 
   for (let block of snapshotBlocks) {
     const positions = await getPositionsForAddressByPoolAtBlock(
-      block, "", "", CHAINS.MODE, PROTOCOLS.SUPSWAP, AMM_TYPES.UNISWAPV3
+      block, "", "", CHAINS.MODE, PROTOCOLS.OVN
     );
-
+    // graph init --product subgraph-studio ovn_linea --from-contract 0x58AaCbccAeC30938cb2bb11653Cad726e5c4194a --network linea 
+    
     console.log(`Block: ${block}`);
     console.log("Positions: ", positions.length);
 
@@ -96,7 +97,6 @@ const getData = async () => {
     let lpValueByUsers = getLPValueByUserAndPoolFromPositions(positionsWithUSDValue);
 
     lpValueByUsers.forEach((value, key) => {
-      let positionIndex = 0; // Define how you track position index
       value.forEach((lpValue, poolKey) => {
         const lpValueStr = lpValue.toString();
         // Accumulate CSV row data
