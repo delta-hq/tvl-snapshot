@@ -1,32 +1,31 @@
-import BigNumber from "bignumber.js";
-import { CHAINS, PROTOCOLS, AMM_TYPES } from "./sdk/config";
-import { getLPValueByUserAndPoolFromPositions, getPositionAtBlock, getPositionDetailsFromPosition, getPositionsForAddressByPoolAtBlock } from "./sdk/subgraphDetails";
+import {Web3} from "web3";
+import {AMM_TYPES, CHAINS, PROTOCOLS, RPC_URLS} from "./sdk/config";
+import {
+  getLPValueByUserAndPoolFromPositions,
+  getPositionDetailsFromPosition,
+  getPositionsForAddressByPoolAtBlock
+} from "./sdk/subgraphDetails";
+import {promisify} from 'util';
+import stream from 'stream';
+import csv from 'csv-parser';
+import fs from 'fs';
+import {write} from 'fast-csv';
+
+import BORROWER_OPERATION_ABI from "./abi/BorrowerOperations.json";
+
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
 };
 
-import { promisify } from 'util';
-import stream from 'stream';
-import csv from 'csv-parser';
-import fs from 'fs';
-import { format } from 'fast-csv';
-import { write } from 'fast-csv';
+const LINEA_MAINNET_RPC_URL = "https://1rpc.io/linea";
+const LINEA_MAINNET_BORROWER_OPERATIONS = "0xA2569C5660F878968307fe677886a533599c0DF3"
+const TOPIC_CREATE_TROVE = "0x59cfd0cd754bc5748b6770e94a4ffa5f678d885cb899dcfadc5734edb97c67ab"
+const TOPIC_UPDATE_TROVE  = "0xc3770d654ed33aeea6bf11ac8ef05d02a6a04ed4686dd2f624d853bbec43cc8b"
 
-//Uncomment the following lines to test the getPositionAtBlock function
-
-// const position = getPositionAtBlock(
-//         0, // block number 0 for latest block
-//         2, // position id
-//         CHAINS.MODE, // chain id
-//         PROTOCOLS.SUPSWAP, // protocol
-//         AMM_TYPES.UNISWAPV3 // amm type
-//     );
-// position.then((position) => {
-//     // print response
-//     const result = getPositionDetailsFromPosition(position);
-//     console.log(`${JSON.stringify(result,null, 4)}
-//     `)
-// });
+interface PastLog {
+  topics: string[];
+  transactionHash: string;
+}
 
 interface LPValueDetails {
   pool: string;
@@ -45,10 +44,9 @@ interface OutputData {
 
 interface CSVRow {
   user: string;
-  pool: string;
+  hash: string;
   block: number;
-  position: number;
-  lpvalue: string;
+  depositEth: string;
 }
 
 
@@ -74,43 +72,40 @@ const readBlocksFromCSV = async (filePath: string): Promise<number[]> => {
 
 
 const getData = async () => {
+  const web3 = new Web3(LINEA_MAINNET_RPC_URL)
+  const borrowerOperation = new web3.eth.Contract(BORROWER_OPERATION_ABI.abi, LINEA_MAINNET_BORROWER_OPERATIONS)
+
   const snapshotBlocks = [
-    3116208, 3159408, 3202608, 3245808, 3289008, 3332208,
-    3375408, 3418608, 3461808, 3505008, 3548208, 3591408,
-    3634608, 3677808, 3721008, 3764208, 3807408, 3850608,
-    3893808, 3937008, 3980208, 3983003,
+    976308,991849
   ]; //await readBlocksFromCSV('src/sdk/mode_chain_daily_blocks.csv');
   
   const csvRows: CSVRow[] = [];
-
-  for (let block of snapshotBlocks) {
-    const positions = await getPositionsForAddressByPoolAtBlock(
-      block, "", "", CHAINS.MODE, PROTOCOLS.SUPSWAP, AMM_TYPES.UNISWAPV3
-    );
-
-    console.log(`Block: ${block}`);
-    console.log("Positions: ", positions.length);
-
-    // Assuming this part of the logic remains the same
-    let positionsWithUSDValue = positions.map(getPositionDetailsFromPosition);
-    let lpValueByUsers = getLPValueByUserAndPoolFromPositions(positionsWithUSDValue);
-
-    lpValueByUsers.forEach((value, key) => {
-      let positionIndex = 0; // Define how you track position index
-      value.forEach((lpValue, poolKey) => {
-        const lpValueStr = lpValue.toString();
-        // Accumulate CSV row data
-        csvRows.push({
-          user: key,
-          pool: poolKey,
-          block,
-          position: positions.length, // Adjust if you have a specific way to identify positions
-          lpvalue: lpValueStr,
-        });
-      });
-    });
+  for (let blockNum of snapshotBlocks) {
+    const pastLogs = await web3.eth.getPastLogs({
+      fromBlock: blockNum,
+      toBlock: blockNum,
+      address: LINEA_MAINNET_BORROWER_OPERATIONS,
+      topics: [[TOPIC_CREATE_TROVE, TOPIC_UPDATE_TROVE]]
+    })
+    const txnSet = new Set<string>();
+    for (let pastLog of pastLogs) {
+      const log = pastLog as PastLog
+      if (txnSet.has(log.transactionHash)) {
+        continue
+      }
+      const txn = await web3.eth.getTransaction(log.transactionHash)
+      const user = txn.from
+      const depositEth = web3.utils.fromWei(txn.value, 'ether')
+      console.log(`Block: ${blockNum}, User: ${user}, Hash: ${log.transactionHash}, Deposit: ${depositEth}`)
+      csvRows.push({
+        user: user,
+        hash: log.transactionHash,
+        block: blockNum,
+        depositEth: depositEth,
+      })
+      txnSet.add(log.transactionHash)
+    }
   }
-
   // Write the CSV output to a file
   const ws = fs.createWriteStream('outputData.csv');
   write(csvRows, { headers: true }).pipe(ws).on('finish', () => {
@@ -121,6 +116,4 @@ const getData = async () => {
 getData().then(() => {
   console.log("Done");
 });
-// getPrice(new BigNumber('1579427897588720602142863095414958'), 6, 18); //Uniswap
-// getPrice(new BigNumber('3968729022398277600000000'), 18, 6); //SupSwap
 
