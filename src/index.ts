@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import { CHAINS, PROTOCOLS, AMM_TYPES } from "./sdk/config";
 import { getLPValueByUserAndPoolFromPositions, getPositionAtBlock, getPositionDetailsFromPosition, getPositionsForAddressByPoolAtBlock } from "./sdk/subgraphDetails";
+import { getPositionsForAddressByPoolAtBlock as getSyncSwapPositionsForAddressByPoolAtBlock} from "./syncswap-snapshots/positionSnapshots"
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
 };
@@ -90,25 +91,9 @@ const getData = async () => {
 
     console.log(`Block: ${block}`);
     console.log("Positions: ", positions.length);
-
-    // Assuming this part of the logic remains the same
-    let positionsWithUSDValue = positions.map(getPositionDetailsFromPosition);
-    let lpValueByUsers = getLPValueByUserAndPoolFromPositions(positionsWithUSDValue);
-
-    lpValueByUsers.forEach((value, key) => {
-      let positionIndex = 0; // Define how you track position index
-      value.forEach((lpValue, poolKey) => {
-        const lpValueStr = lpValue.toString();
-        // Accumulate CSV row data
-        csvRows.push({
-          user: key,
-          pool: poolKey,
-          block,
-          position: positions.length, // Adjust if you have a specific way to identify positions
-          lpvalue: lpValueStr,
-        });
-      });
-    });
+    // SyncSwap Linea position snapshot
+    // const rows = await getSyncSwapPositionsForAddressByPoolAtBlock(block)
+    // rows.forEach((row) => csvRows.push(row as CSVRow))
   }
 
   // Write the CSV output to a file
