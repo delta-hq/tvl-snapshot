@@ -48,7 +48,6 @@ export const getPositionsForAddressByPoolAtBlock = async  (
             where: {
               block_gt: ${b_start},
               block_lte: ${b_end},
-              liquidityTokenBalance_gt: 0
             }
           ) {
               pair {id}
