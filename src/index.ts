@@ -89,6 +89,24 @@ const getData = async () => {
       block, "", "", CHAINS.MODE, PROTOCOLS.SUPSWAP, AMM_TYPES.UNISWAPV3
     );
 
+    // Assuming this part of the logic remains the same
+    let positionsWithUSDValue = positions.map(getPositionDetailsFromPosition);
+    let lpValueByUsers = getLPValueByUserAndPoolFromPositions(positionsWithUSDValue);
+
+    lpValueByUsers.forEach((value, key) => {
+      let positionIndex = 0; // Define how you track position index
+      value.forEach((lpValue, poolKey) => {
+        const lpValueStr = lpValue.toString();
+        // Accumulate CSV row data
+        csvRows.push({
+          user: key,
+          pool: poolKey,
+          block,
+          position: positions.length, // Adjust if you have a specific way to identify positions
+          lpvalue: lpValueStr,
+        });
+      });
+    });
     console.log(`Block: ${block}`);
     console.log("Positions: ", positions.length);
     // SyncSwap Linea position snapshot
