@@ -1,4 +1,4 @@
-# SupSwap - TVL by User
+# TVL by User - Adapters
 
 In this repo you will find the code responsible to get data positions from the subrgaph and calculate the TVL by users.
 The main scripts is generating a output as CSV and there is another one that can be used to generate the JSON file.
