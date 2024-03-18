@@ -2,3 +2,5 @@ node_modules/
 dist/
 Ds_Store
 package-lock.json
+
+.Ds_Store
