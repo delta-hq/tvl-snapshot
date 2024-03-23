@@ -1,6 +1,6 @@
 import { CHAINS, PROTOCOLS, SUBGRAPH_URLS } from "./config";
-import axios from "axios";
-export interface Depositor {
+
+export type Depositor = {
   id: string;
   shares: bigint;
   account: string;
@@ -11,8 +11,17 @@ export interface Depositor {
   blockNumber: string;
 }
 
+export type VaultPositions = {
+  id: string
+  vault: {
+    id: string
+  }
+  upperTick: string[]
+  lowerTick: string[]
+}
+
 export async function getVaultPositions(chainId: CHAINS,
-    protocol: PROTOCOLS, vaultId: string): Promise<any[]> {
+    protocol: PROTOCOLS, vaultId: string): Promise<VaultPositions[]> {
 
   let subgraphUrl = SUBGRAPH_URLS[chainId][protocol];
   const query = `{
@@ -27,19 +36,16 @@ export async function getVaultPositions(chainId: CHAINS,
     }
     `;
 
-  const response = await axios.post(
-    subgraphUrl,
-    {
-      query: query,
-    },
-    {
-      headers: { "Content-Type": "application/json" },
-    }
-  );
+
+  let response = await fetch(subgraphUrl, {
+    method: "POST",
+    body: JSON.stringify({ query }),
+    headers: { "Content-Type": "application/json" },
+});
+  let data:any = await response.json();
 
   // Access data property directly from response
-  const data = response.data;
-  let vaultPositions = data.data.vaultPositions || [];
+  let vaultPositions = (data.data.vaultPositions || []) as VaultPositions[];
 
   return vaultPositions;
 }
@@ -86,27 +92,13 @@ export const getDepositorsForAddressByVaultAtBlock = async (
             }
         }`;
 
-    // console.log(query)
-
-    // let response = await fetch(subgraphUrl, {
-    //     method: "POST",
-    //     body: JSON.stringify({ query }),
-    //     headers: { "Content-Type": "application/json" },
-    // });
-    // let data:any = await response.json();
-
-    const response = await axios.post(
-      subgraphUrl,
-      {
-        query: query,
-      },
-      {
+    let response = await fetch(subgraphUrl, {
+        method: "POST",
+        body: JSON.stringify({ query }),
         headers: { "Content-Type": "application/json" },
-      }
-    );
-
-    // Access data property directly from response
-    const data = response.data;
+    });
+    let data:any = await response.json();
+   
     let depositors = data.data.vaultDeposits || [];
 
     for (let i = 0; i < depositors.length; i++) {

@@ -1,5 +1,5 @@
 import { CHAINS, PROTOCOLS } from "./sdk/config";
-import { getDepositorsForAddressByVaultAtBlock, getVaultPositions } from "./sdk/subgraphDetails";
+import { VaultPositions, getDepositorsForAddressByVaultAtBlock, getVaultPositions } from "./sdk/subgraphDetails";
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
 };
@@ -51,15 +51,22 @@ const getData = async () => {
     });
 
     csvRows = csvRows.concat(depositorsRow);
-  } 
+  }   
 
-  const vaultIds = csvRows.map(({vaultId}) => vaultId);
-
-  const uniqueVaultIds = [...new Set(vaultIds)];
-
+  const vaultsPositions: {
+    [key: string]: VaultPositions[]
+  } = {};
 
   for (const csvRow of csvRows) {
-    const vaultPositions = await getVaultPositions( CHAINS.MODE, PROTOCOLS.STEER, csvRow.vaultId)
+    let vaultPositions = [];
+
+    if (vaultsPositions[csvRow.vaultId]) {
+      vaultPositions = vaultsPositions[csvRow.vaultId];
+    } else {
+      vaultPositions = await getVaultPositions( CHAINS.MODE, PROTOCOLS.STEER, csvRow.vaultId)
+      vaultsPositions[csvRow.vaultId] = vaultPositions;
+    }
+   
     csvRow.positions = vaultPositions[0].lowerTick.length;
   }
 
