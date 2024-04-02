@@ -9,6 +9,7 @@ import fs from 'fs';
 import stream from 'stream';
 import { promisify } from 'util';
 import { getLpTokenPrice } from "./sdk/price";
+import BigNumber from "bignumber.js";
 
 
 
@@ -83,8 +84,10 @@ const getData = async () => {
       )
       lpTokenPrices[csvRow.vaultId] = lpPriceUsd;
     }
+
+    const lpTokenEth = new BigNumber(csvRow.lpvalue).div(10**18);  
     
-    csvRow.lpvalueusd = lpPriceUsd * Number(csvRow.lpvalue);
+    csvRow.lpvalueusd = lpPriceUsd * lpTokenEth.toNumber();
    
     csvRow.positions = vaultPositions[0].lowerTick.length;
   }
