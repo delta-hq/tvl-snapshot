@@ -41,7 +41,7 @@ export async function getVaultPositions(chainId: CHAINS,
     method: "POST",
     body: JSON.stringify({ query }),
     headers: { "Content-Type": "application/json" },
-});
+  });
   let data:any = await response.json();
 
   // Access data property directly from response

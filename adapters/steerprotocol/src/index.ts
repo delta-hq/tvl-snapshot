@@ -8,6 +8,7 @@ import { write } from 'fast-csv';
 import fs from 'fs';
 import stream from 'stream';
 import { promisify } from 'util';
+import { getLpTokenPrice } from "./sdk/price";
 
 
 
@@ -17,7 +18,8 @@ interface CSVRow {
   block: number;
   lpvalue: string;
   poolId: string,
-  positions: number
+  positions: number,
+  lpvalueusd: number
 }
 
 
@@ -57,8 +59,13 @@ const getData = async () => {
     [key: string]: VaultPositions[]
   } = {};
 
+  const lpTokenPrices: {
+    [key: string]: number
+  } = {};
+
   for (const csvRow of csvRows) {
     let vaultPositions = [];
+    let lpPriceUsd = 0;
 
     if (vaultsPositions[csvRow.vaultId]) {
       vaultPositions = vaultsPositions[csvRow.vaultId];
@@ -66,6 +73,18 @@ const getData = async () => {
       vaultPositions = await getVaultPositions( CHAINS.MODE, PROTOCOLS.STEER, csvRow.vaultId)
       vaultsPositions[csvRow.vaultId] = vaultPositions;
     }
+
+    if (lpTokenPrices[csvRow.vaultId]) {
+      lpPriceUsd = lpTokenPrices[csvRow.vaultId];
+    } else {
+      lpPriceUsd = await getLpTokenPrice(
+        CHAINS.MODE,
+        csvRow.vaultId
+      )
+      lpTokenPrices[csvRow.vaultId] = lpPriceUsd;
+    }
+    
+    csvRow.lpvalueusd = lpPriceUsd * Number(csvRow.lpvalue);
    
     csvRow.positions = vaultPositions[0].lowerTick.length;
   }
