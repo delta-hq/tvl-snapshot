@@ -2,7 +2,7 @@ export const enum CHAINS{
     MODE = 34443,
 }
 export const enum PROTOCOLS{
-    SUPSWAP = 0,
+    STEER = 0,
 }
 
 export const enum AMM_TYPES{
@@ -11,9 +11,7 @@ export const enum AMM_TYPES{
 
 export const SUBGRAPH_URLS = {
     [CHAINS.MODE]: {
-        [PROTOCOLS.SUPSWAP]: {
-            [AMM_TYPES.UNISWAPV3]: "https://api.goldsky.com/api/public/project_clrhmyxsvvuao01tu4aqj653e/subgraphs/supswap-exchange-v3/1.0.0/gn"
-        }
+        [PROTOCOLS.STEER]:  "https://api.goldsky.com/api/public/project_clohj3ta78ok12nzs5m8yag0b/subgraphs/steer-protocol-mode/1.1.2/gn"
     }
 }
 export const RPC_URLS = {
