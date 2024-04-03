@@ -29,7 +29,7 @@ const pipeline = promisify(stream.pipeline);
 
 const getData = async () => {
   const snapshotBlocks = [
-    5339627, 5447950, 5339736
+    5911608, 5913408, 5915208, 5917008, 5918808, 5919412, 5920608, 5920714, 5920719
   ]; //await readBlocksFromCSV('src/sdk/mode_chain_daily_blocks.csv');
   
   let csvRows: CSVRow[] = [];
@@ -40,7 +40,7 @@ const getData = async () => {
     );
 
     console.log(`Block: ${block}`);
-    console.log("Positions: ", depositors.length);
+    console.log("Depositors: ", depositors.length);
 
 
     const depositorsRow: CSVRow[] = depositors.map((depositor) => {
@@ -73,7 +73,7 @@ const getData = async () => {
     } else {
       vaultPositions = await getVaultPositions( CHAINS.MODE, PROTOCOLS.STEER, csvRow.vaultId)
       vaultsPositions[csvRow.vaultId] = vaultPositions;
-    }
+    } 
 
     if (lpTokenPrices[csvRow.vaultId]) {
       lpPriceUsd = lpTokenPrices[csvRow.vaultId];
@@ -89,7 +89,7 @@ const getData = async () => {
     
     csvRow.lpvalueusd = lpPriceUsd * lpTokenEth.toNumber();
    
-    csvRow.positions = vaultPositions[0].lowerTick.length;
+    csvRow.positions = vaultPositions.length > 0 ? vaultPositions[0].lowerTick.length: 0;
   }
 
   // Write the CSV output to a file

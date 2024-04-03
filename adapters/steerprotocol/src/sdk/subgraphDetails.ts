@@ -58,7 +58,8 @@ export const getDepositorsForAddressByVaultAtBlock = async (
   protocol: PROTOCOLS
 ): Promise<Depositor[]> => {
   let subgraphUrl = SUBGRAPH_URLS[chainId][protocol];
-  let blockQuery = blockNumber !== 0 ? ` blockNumber: ${blockNumber}}` : ``;
+
+  let blockQuery = blockNumber !== 0 ? ` block: {number: ${blockNumber}}` : ``;
   let poolQuery =
     vaultId !== "" ? ` vault_:{id: "${vaultId.toLowerCase()}"}` : ``;
   let ownerQuery = address !== "" ? `account: "${address.toLowerCase()}"` : ``;
@@ -72,9 +73,6 @@ export const getDepositorsForAddressByVaultAtBlock = async (
       ? `where: {${poolQuery}}`
       : ``;
 
-  if (blockQuery !== "" && whereQuery === "") {
-    whereQuery = `where: {`;
-  }
   let skip = 0;
   let fetchNext = true;
   let result: Depositor[] = [];
@@ -91,6 +89,8 @@ export const getDepositorsForAddressByVaultAtBlock = async (
                 blockNumber
             }
         }`;
+
+    console.log(query);
 
     let response = await fetch(subgraphUrl, {
         method: "POST",
